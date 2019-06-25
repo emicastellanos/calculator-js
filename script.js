@@ -27,10 +27,10 @@ const getKeyType = action => {
     return action 
 }
 
-const createResultString = (key,displayedNum,calculator) => {
+const createResultString = (key,displayedNum,calculator, keyType) => {
     const keyContent = key.textContent
     const { previousKeyType, firstValue, operator, modValue } = calculator.dataset
-    const keyType = getKeyType (key.dataset.action)
+    
 
     if (keyType === 'number'){
         console.log('number', displayedNum, calculator.dataset)
@@ -42,6 +42,8 @@ const createResultString = (key,displayedNum,calculator) => {
     }
 
     if (keyType === 'decimal') {
+        //aca arreglar para que no concatene un . cuando viene de haber apretado un operador o un igual
+        //
         if (!displayedNum.includes('.')) return displayedNum.concat('.')
         if (previousKeyType === 'operator' || previousKeyType === 'calculate') return  '0.'
         return displayedNum
@@ -68,29 +70,20 @@ const createResultString = (key,displayedNum,calculator) => {
     } 
 }
 
-const updateCalculatorState = (key, calculator, displayedNum,result) => {
-    const action = key.dataset.action
-    const keyType = getKeyType (action)
+const updateCalculatorState = (key, calculator, displayedNum,result, keyType) => {
     const modValue = calculator.dataset.modValue
     const previousKeyType = calculator.dataset.previousKeyType
     calculator.dataset.previousKeyType = keyType
-    
-    Array.from(key.parentNode.children).forEach( k => k.classList.remove('is-depressed'))
 
     if(keyType === 'number'){
-        console.log('previousKeyType',previousKeyType)
         if(previousKeyType === 'calculate'){
-            console.log('lo vacia')
             calculator.dataset.firstValue = ''
         }
-        
-        clear.textContent = 'CE'
     }
 
     if(keyType === 'operator'){
         calculator.dataset.firstValue = result
-        key.classList.add('is-depressed') //para dejar presionado el boton y que el usuario sepa cual eligio
-        calculator.dataset.operator = action
+        calculator.dataset.operator = key.dataset.action
     }
 
     if (keyType === 'decimal') {
@@ -104,8 +97,6 @@ const updateCalculatorState = (key, calculator, displayedNum,result) => {
         calculator.dataset.firstValue = ''
         calculator.dataset.operator = ''
         calculator.dataset.previousKeyType = ''
-    } else if (keyType !== 'calculate') {
-        clear.textContent = 'CE'
     }
 
     if (keyType === 'calculate') {
@@ -113,13 +104,31 @@ const updateCalculatorState = (key, calculator, displayedNum,result) => {
     }
 }
 
+const updateView = (key,keyType) =>{
+    
+    Array.from(key.parentNode.children).forEach( k => k.classList.remove('is-depressed'))
+    
+    if(keyType === 'number'){
+        clear.textContent = 'CE'
+    }
+    if(keyType === 'operator'){
+        key.classList.add('is-depressed') //para dejar presionado el boton y que el usuario sepa cual eligio
+    }
+    if (keyType === 'clear') {
+        clear.textContent = 'AC'
+    }else if (keyType !== 'calculate') {
+        clear.textContent = 'CE'
+    }
+}
+
 keys.addEventListener('click', e => {
     if (e.target.matches('button')) {
         const key = e.target
         const displayedNum = display.textContent
-        const result = createResultString(key, displayedNum, calculator)
+        const keyType = getKeyType (key.dataset.action)
+        const result = createResultString(key, displayedNum, calculator, keyType)
         display.textContent = result
-        updateCalculatorState(key, calculator,displayedNum, result)
-        
+        updateCalculatorState(key, calculator,displayedNum, result, keyType)
+        updateView(key,keyType)
     }
 })
